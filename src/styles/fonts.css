@@ -1,0 +1,21 @@
+/* Inter for UI text - Apple simple style */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+/* IBM Plex Mono for commerce facts only */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', Monaco, 'Courier New', monospace;
+}
+
+body {
+  font-family: var(--font-ui);
+}
+
+/* Utility class for commerce facts: prices, totals, VAT notes, receipt IDs, sales counts, status chips */
+.font-commerce {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
