@@ -15,9 +15,9 @@ export function Footer() {
           <a href="#how-it-works" className="hover:text-gray-900 transition-colors">How it works</a>
           <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
           <a href="#use-cases" className="hover:text-gray-900 transition-colors">Use Cases</a>
-          <a href="#" className="hover:text-gray-900 transition-colors">Terms of Service</a>
-          <a href="#" className="hover:text-gray-900 transition-colors">Privacy Policy</a>
-          <a href="#" className="hover:text-gray-900 transition-colors">Contact Support</a>
+          <Link to="/terms" className="hover:text-gray-900 transition-colors">Terms of Service</Link>
+          <Link to="/privacy" className="hover:text-gray-900 transition-colors">Privacy Policy</Link>
+          <Link to="/support" className="hover:text-gray-900 transition-colors">Contact Support</Link>
         </nav>
         
         <p className="text-gray-400 text-sm">

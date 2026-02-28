@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router";
 import { CheckoutHeader } from "../components/qrstore/headers";
 import { AwningBand } from "../components/qrstore/headers/awning-band";
 import { EmptyState } from "../components/qrstore/empty-state";
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "../components/ui/utils";
 import { Skeleton } from "../components/ui/skeleton";
+import { GuidedTour, TourStep } from "../components/GuidedTour";
 
 // --- Types ---
 
@@ -283,6 +285,7 @@ function BottomNav({ activeTab, onTabChange }: { activeTab: Tab, onTabChange: (t
       {tabs.map((tab) => (
         <button
           key={tab.id}
+          id={`${tab.id}-tab`}
           onClick={() => onTabChange(tab.id)}
           className={cn(
             "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors active:scale-95 duration-100",
@@ -582,6 +585,32 @@ function DashboardSkeleton() {
 export default function ClientAppPage() {
   const [activeTab, setActiveTab] = useState<Tab>('pay');
   
+  // Tour State
+  const [tourVisible, setTourVisible] = useState(true);
+  const clientTourSteps: TourStep[] = [
+    {
+      targetId: "client-search-trigger",
+      title: "Search products",
+      body: "Type keywords or browse curated categories from local Swedish artisans.",
+      buttonText: "Search",
+      placement: "bottom"
+    },
+    {
+      targetId: "recent-places-list",
+      title: "Open a product",
+      body: "See high-resolution details, verified customer reviews, and fast delivery options.",
+      buttonText: "Next",
+      placement: "top"
+    },
+    {
+      targetId: "receipts-tab",
+      title: "Track orders",
+      body: "All your active purchases, digital receipts, and tracking history are stored here.",
+      buttonText: "Got it",
+      placement: "top"
+    }
+  ];
+
   // Pay State
   const [payView, setPayView] = useState<PayView>('dashboard');
   const [sessionCode, setSessionCode] = useState("");
@@ -830,13 +859,13 @@ export default function ClientAppPage() {
                </div>
             </div>
 
-            <Button size="lg" className="w-full h-16 text-lg rounded-full shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-white" onClick={handleScanClick}>
+            <Button id="client-search-trigger" size="lg" className="w-full h-16 text-lg rounded-full shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-white" onClick={handleScanClick}>
               <Camera className="w-6 h-6 mr-3" />
               Scan & Pay
             </Button>
 
             {/* Recent Places */}
-            <div>
+            <div id="recent-places-list">
               <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3">Recent Places</h3>
               <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
                 {MOCK_RECENT_PLACES.map((place) => (
@@ -1686,7 +1715,11 @@ export default function ClientAppPage() {
 
   return (
     <div className="min-h-screen bg-gray-50/50 relative font-sans text-slate-900">
-      
+      <GuidedTour 
+        steps={clientTourSteps} 
+        isVisible={tourVisible} 
+        onComplete={() => setTourVisible(false)} 
+      />
       {/* Pre-Prompt Bottom Sheet */}
       <PrePromptSheet 
         type={activePrePrompt} 

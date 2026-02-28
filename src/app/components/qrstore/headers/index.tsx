@@ -138,12 +138,12 @@ export function SellerHeader({
             </Button>
           )}
           {onSettingsClick && (
-            <Button variant="ghost" size="icon" onClick={onSettingsClick} className="text-muted-foreground hover:text-foreground">
+            <Button id="payout-settings" variant="ghost" size="icon" onClick={onSettingsClick} className="text-muted-foreground hover:text-foreground">
               <Settings className="w-5 h-5" />
             </Button>
           )}
           {onProfileClick && (
-            <Button variant="ghost" size="icon" onClick={onProfileClick} className="text-muted-foreground hover:text-foreground">
+            <Button id="profile-btn" variant="ghost" size="icon" onClick={onProfileClick} className="text-muted-foreground hover:text-foreground">
               <User className="w-5 h-5" />
             </Button>
           )}

@@ -8,6 +8,7 @@ import { Trust } from "./Home/Trust";
 import { WallOfLove } from "./Home/WallOfLove";
 import { DashboardSneakPeek } from "./Home/DashboardSneakPeek";
 import { FAQ } from "./Home/FAQ";
+import { Contact } from "./Home/Contact";
 import { FinalCTA } from "./Home/FinalCTA";
 import { DemoLinks } from "./Home/DemoLinks";
 
@@ -24,6 +25,7 @@ export function Home() {
       <Trust />
       <WallOfLove />
       <FAQ />
+      <Contact />
       <FinalCTA />
       <DemoLinks />
     </div>

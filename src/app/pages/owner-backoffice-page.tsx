@@ -8,11 +8,41 @@ import {
   LayoutDashboard, ShoppingBag, Users, DollarSign, 
   ShieldCheck, Settings, Plus, Search, Filter, 
   MoreHorizontal, Archive, Edit, Copy, ChevronRight,
-  Upload, CheckCircle2, AlertCircle, FileText, Globe, CreditCard
+  Upload, CheckCircle2, AlertCircle, FileText, Globe, CreditCard,
+  Building, Landmark, Briefcase, Wallet
 } from "lucide-react";
 import { cn } from "../components/ui/utils";
 import { EmptyState } from "../components/qrstore/empty-state";
 import { PriceInput } from "../components/qrstore/price-input";
+import { GuidedTour, TourStep } from "../components/GuidedTour";
+import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+
+// --- Components ---
+
+const BankLogo = ({ type, size = "md" }: { type: string, size?: "sm" | "md" | "lg" }) => {
+  const sizeClasses = {
+    sm: "w-6 h-6 rounded-lg",
+    md: "w-10 h-10 rounded-xl",
+    lg: "w-14 h-14 rounded-2xl"
+  };
+
+  const logos: Record<string, string> = {
+    nordea: "https://images.unsplash.com/photo-1582728338776-cb14fd2e42be?w=100&h=100&fit=crop",
+    swedbank: "https://images.unsplash.com/photo-1728426340277-b2e45fa616a1?w=100&h=100&fit=crop",
+    seb: "https://images.unsplash.com/photo-1535811494373-6c551746eb13?w=100&h=100&fit=crop",
+    handelsbanken: "https://images.unsplash.com/photo-1582728338776-cb14fd2e42be?w=100&h=100&fit=crop&q=40",
+  };
+
+  return (
+    <div className={cn("bg-white border border-gray-100 flex items-center justify-center overflow-hidden shadow-sm", sizeClasses[size])}>
+      <ImageWithFallback 
+        src={logos[type] || logos.nordea} 
+        alt={type} 
+        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+      />
+    </div>
+  );
+};
 
 // Types
 type PageView = 'dashboard' | 'products' | 'product-editor' | 'team' | 'payouts' | 'compliance' | 'settings';
@@ -405,16 +435,29 @@ export default function OwnerBackofficePage() {
 
            <Card className="p-6 shadow-sm">
              <h3 className="font-semibold mb-4">Payout Method</h3>
-             <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 border rounded-lg">
-                <div className="w-10 h-6 bg-slate-800 rounded flex items-center justify-center text-white text-[10px] font-bold tracking-wider">
-                  BANK
+             <div className="flex items-center gap-3 mb-4 p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-[#006241]/30 transition-all group cursor-pointer">
+                <BankLogo type="nordea" size="md" />
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-gray-900">Nordea Bank Abp</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">•••• 4242 • EUR</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">HSBC Holdings</p>
-                  <p className="text-xs text-muted-foreground">**** 4242 • EUR</p>
+                <div className="w-5 h-5 rounded-full bg-[#006241]/10 flex items-center justify-center text-[#006241]">
+                  <CheckCircle2 className="w-3 h-3" />
                 </div>
              </div>
-             <Button variant="outline" className="w-full">Manage Methods</Button>
+             
+             <div className="space-y-3 pt-2">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 px-1">Logo Vault Preview</p>
+                <div className="grid grid-cols-4 gap-2">
+                   {['nordea', 'swedbank', 'seb', 'handelsbanken'].map((bank) => (
+                     <div key={bank} className="flex flex-col items-center gap-1 group">
+                       <BankLogo type={bank} size="sm" />
+                     </div>
+                   ))}
+                </div>
+             </div>
+
+             <Button variant="outline" className="w-full mt-6 rounded-xl text-[10px] font-black uppercase tracking-widest">Manage Methods</Button>
            </Card>
          </div>
       </div>
@@ -510,6 +553,20 @@ export default function OwnerBackofficePage() {
             <label className="text-sm font-medium">Phone Number</label>
             <Input defaultValue="+33 1 23 45 67 89" />
           </div>
+        </div>
+      </Card>
+
+      <Card className="p-6 space-y-6 shadow-sm">
+        <h3 className="font-semibold text-lg border-b pb-4">Bank Identity</h3>
+        <p className="text-sm text-muted-foreground mt-2">Select your primary bank to display the correct brand logo on customer invoices and platform reports.</p>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+           {['nordea', 'swedbank', 'seb', 'handelsbanken'].map((bank) => (
+             <button key={bank} className="flex flex-col items-center gap-3 p-4 bg-white border border-gray-100 rounded-[2rem] hover:border-[#006241]/30 transition-all hover:shadow-xl hover:-translate-y-1 group">
+               <BankLogo type={bank} size="md" />
+               <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-[#006241]">{bank}</span>
+             </button>
+           ))}
         </div>
       </Card>
 

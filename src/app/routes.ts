@@ -6,6 +6,7 @@ import { Signup } from "./pages/Signup";
 
 // Main App Pages
 import ClientAppPage from "./pages/client-app-page";
+import ClientCheckoutPage from "./pages/client-checkout-page";
 import SellerAppPage from "./pages/seller-app-page";
 import OwnerBackofficePage from "./pages/owner-backoffice-page";
 import StorefrontPage from "./pages/storefront-page";
@@ -14,6 +15,14 @@ import DesignSystemPage from "./pages/design-system-page";
 import EdgeCasesPage from "./pages/edge-cases-page";
 import ErrorSystemStatesPage from "./pages/error-system-states-page";
 import LegalConsentPage from "./pages/legal-consent-page";
+import ContactPage from "./pages/contact-page";
+import TermsPage from "./pages/Terms";
+import PrivacyPage from "./pages/Privacy";
+import SupportPage from "./pages/Support";
+import SellerDashboard from "./pages/seller-dashboard";
+import ClientDashboard from "./pages/client-dashboard";
+import OwnerDashboard from "./pages/owner-dashboard";
+import DevDashboard from "./pages/dev-dashboard";
 
 // Admin Pages
 import AdminDashboardPage from "./pages/admin-dashboard-page";
@@ -47,14 +56,18 @@ export const router = createBrowserRouter([
         ],
       },
       { path: "client", Component: ClientAppPage },
+      { path: "checkout/:orderId", Component: ClientCheckoutPage },
       { path: "seller", Component: SellerAppPage },
       { path: "owner", Component: OwnerBackofficePage },
-      { path: "storefront/:merchantSlug", Component: StorefrontPage },
       { path: "dev", Component: DeveloperPlatformPage },
       { path: "design", Component: DesignSystemPage },
       { path: "edge-cases", Component: EdgeCasesPage },
       { path: "errors", Component: ErrorSystemStatesPage },
       { path: "legal", Component: LegalConsentPage },
+      { path: "contact", Component: ContactPage },
+      { path: "terms", Component: TermsPage },
+      { path: "privacy", Component: PrivacyPage },
+      { path: "support", Component: SupportPage },
       
       // Admin Routes
       { path: "admin", Component: AdminDashboardPage },

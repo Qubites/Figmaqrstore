@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight, RefreshCw, Zap, CheckCircle2, Store, ShoppingBag, QrCode, Smartphone, CreditCard, Camera, Play } from "lucide-react";
+import { ArrowRight, RefreshCw, Zap, CheckCircle2, Store, ShoppingBag, QrCode, Smartphone, CreditCard, Camera, Play, Receipt, Mail } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
@@ -8,7 +8,7 @@ import { cn } from "../../components/ui/utils";
 import { useNavigate } from "react-router";
 import { ImageWithFallback } from "../../components/figma/ImageWithFallback";
 
-type Step = "idle" | "store" | "product" | "generating" | "test_payment" | "complete";
+type Step = "idle" | "store" | "product" | "receipt";
 
 // Preload images to avoid flickering
 const IMAGES = {
@@ -24,6 +24,7 @@ export function TwentySecondChallenge() {
   const [storeName, setStoreName] = useState("");
   const [productName, setProductName] = useState("");
   const [productPrice, setProductPrice] = useState("");
+  const [email, setEmail] = useState("");
   const timerRef = useRef<number | null>(null);
   const navigate = useNavigate();
 
@@ -36,22 +37,26 @@ export function TwentySecondChallenge() {
   }, [step]);
 
   useEffect(() => {
-    if (step === "store" && !startTime) {
-      setStartTime(Date.now());
-      timerRef.current = window.setInterval(() => {
-        setElapsed((Date.now() - (startTime || Date.now())) / 1000);
-      }, 100);
-    } else if (step === "generating") {
+    if (step !== "idle" && step !== "receipt" && startTime) {
       if (timerRef.current) clearInterval(timerRef.current);
-      setTimeout(() => setStep("test_payment"), 2000);
-    }
+      timerRef.current = window.setInterval(() => {
+        setElapsed((Date.now() - startTime) / 1000);
+      }, 50);
+    } 
 
     return () => {
-      if (timerRef.current && (step === "complete" || step === "idle")) {
+      if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     };
   }, [step, startTime]);
+
+  // Stop timer when receipt is shown
+  useEffect(() => {
+    if (step === "receipt" && timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+  }, [step]);
 
   const handleRestart = () => {
     setStep("idle");
@@ -60,15 +65,15 @@ export function TwentySecondChallenge() {
     setStoreName("");
     setProductName("");
     setProductPrice("");
+    setEmail("");
     if (timerRef.current) clearInterval(timerRef.current);
   };
 
   const handleStart = () => {
+    const now = Date.now();
+    setStartTime(now);
+    setElapsed(0);
     setStep("store");
-    setStartTime(Date.now());
-    timerRef.current = window.setInterval(() => {
-        setElapsed((Date.now() - (Date.now())) / 1000);
-    }, 100);
   };
 
   const handleStoreSubmit = (e: React.FormEvent) => {
@@ -78,23 +83,18 @@ export function TwentySecondChallenge() {
 
   const handleProductSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (productName.trim() && productPrice.trim()) setStep("generating");
+    if (productName.trim() && productPrice.trim()) setStep("receipt");
   };
 
-  const handleSimulatePayment = () => {
-      setStep("complete");
-  };
-
-  const handleClaimShop = () => {
-      navigate(`/signup?store=${encodeURIComponent(storeName)}&product=${encodeURIComponent(productName)}&price=${encodeURIComponent(productPrice)}`);
+  const handleActivateShop = (e: React.FormEvent) => {
+      e.preventDefault();
+      navigate(`/signup?email=${encodeURIComponent(email)}&store=${encodeURIComponent(storeName)}`);
   };
 
   const progress = Math.min((elapsed / 20) * 100, 100);
-  const circleCircumference = 2 * Math.PI * 18;
-  const strokeDashoffset = circleCircumference - (progress / 100) * circleCircumference;
 
   return (
-    <div className="relative w-full max-w-md mx-auto h-[640px] perspective-1000 group">
+    <div className="relative w-full max-w-md mx-auto h-[640px] [perspective:1000px] group">
       
       <motion.div
         className="relative w-full h-full bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col ring-8 ring-white/20"
@@ -105,18 +105,14 @@ export function TwentySecondChallenge() {
         {/* Background Image Layer */}
         <div className="absolute inset-0 z-0">
            <ImageWithFallback 
-              src={step === "test_payment" ? IMAGES.phone : IMAGES.bg}
+              src={IMAGES.bg}
               alt="Background" 
               className={cn(
                   "w-full h-full object-cover transition-all duration-700",
-                  step === "test_payment" ? "opacity-100 scale-100" : "opacity-20 blur-sm scale-110",
-                  step === "complete" && "opacity-10 blur-md"
+                  step !== "idle" ? "opacity-10 blur-md" : "opacity-20 blur-sm scale-110"
               )}
            />
-           <div className={cn(
-               "absolute inset-0 bg-white/80 backdrop-blur-sm transition-opacity duration-500",
-               step === "test_payment" ? "opacity-30" : "opacity-80"
-           )} />
+           <div className="absolute inset-0 bg-white/80 backdrop-blur-sm opacity-80" />
         </div>
 
         {/* Header */}
@@ -157,7 +153,10 @@ export function TwentySecondChallenge() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 relative z-10 px-6 pb-6 flex flex-col items-center justify-center">
+        <div className={cn(
+            "flex-1 relative z-10 px-6 pb-6 flex flex-col items-center",
+            step === "idle" ? "justify-center" : "justify-start pt-4"
+        )}>
             <AnimatePresence mode="wait">
                 
                 {/* IDLE */}
@@ -210,209 +209,188 @@ export function TwentySecondChallenge() {
                     </motion.div>
                 )}
 
-                {/* STEP 1: STORE */}
-                {step === "store" && (
+                {/* STEPS 1 & 2 MERGED (FORM ON TOP OF PRINTER) */}
+                {(step === "store" || step === "product") && (
                     <motion.div
-                        key="store"
+                        key="merged-steps"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="w-full space-y-6"
+                        className="w-full flex flex-col items-center"
                     >
-                        <div className="relative aspect-video rounded-2xl overflow-hidden shadow-lg border border-white/50">
-                             <ImageWithFallback 
-                                src={IMAGES.cafe}
-                                alt="Store Preview"
-                                className="w-full h-full object-cover"
-                             />
-                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                 <Store className="w-10 h-10 text-white opacity-80" />
+                         {/* Printer Header / Screen */}
+                         <div className="w-full bg-gray-50 rounded-[2rem] p-8 border border-gray-200 shadow-xl relative z-40 mb-2">
+                             <div className="text-center mb-6">
+                                 <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-gray-100">
+                                     <Store className="w-6 h-6 text-[#006241]" />
+                                 </div>
+                                 <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+                                     Store Registration
+                                 </h3>
                              </div>
-                             <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur text-xs font-bold px-2 py-1 rounded-md">
-                                Your Store
-                             </div>
-                        </div>
 
-                        <div className="space-y-4">
-                            <div className="space-y-1">
-                                <label className="text-sm font-bold text-gray-900 ml-1">Name your business</label>
-                                <div className="relative group">
+                             <form onSubmit={handleProductSubmit} className="space-y-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Shop Name</label>
                                     <Input
                                         ref={inputRef}
                                         value={storeName}
                                         onChange={(e) => setStoreName(e.target.value)}
-                                        className="pl-4 h-14 rounded-2xl text-lg border-transparent shadow-lg ring-1 ring-gray-100 focus:border-[#006241] focus:ring-[#006241] bg-white transition-all"
-                                        placeholder="e.g. Downtown Coffee"
+                                        className="h-12 rounded-xl text-lg border-gray-100 bg-white focus:border-[#006241] focus:ring-[#006241] shadow-inner"
+                                        placeholder="e.g. Nordic Roast"
                                     />
                                 </div>
-                            </div>
-                            <Button type="submit" onClick={(e) => handleStoreSubmit(e)} className="w-full h-14 rounded-2xl bg-black text-white hover:bg-gray-800 font-bold shadow-lg" disabled={!storeName}>
-                                Next <ArrowRight className="w-4 h-4 ml-2" />
-                            </Button>
-                        </div>
-                    </motion.div>
-                )}
-
-                {/* STEP 2: PRODUCT */}
-                {step === "product" && (
-                    <motion.div
-                        key="product"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="w-full space-y-6"
-                    >
-                         <div className="flex gap-4">
-                            <div className="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center shrink-0 border-2 border-dashed border-gray-300">
-                                <Camera className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <div className="flex-1 space-y-2 py-1">
-                                <h3 className="font-bold text-gray-900 leading-tight">What are you selling?</h3>
-                                <p className="text-xs text-gray-500">Add your first item to {storeName}.</p>
-                            </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">First Product</label>
+                                    <Input
+                                        value={productName}
+                                        onChange={(e) => setProductName(e.target.value)}
+                                        className="h-12 rounded-xl text-lg border-gray-100 bg-white focus:border-[#006241] focus:ring-[#006241] shadow-inner"
+                                        placeholder="e.g. Filter Coffee"
+                                    />
+                                </div>
+                                <div className="space-y-1 relative">
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1">Price</label>
+                                    <div className="relative">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 font-bold text-lg">€</div>
+                                        <Input
+                                            type="number"
+                                            value={productPrice}
+                                            onChange={(e) => setProductPrice(e.target.value)}
+                                            className="h-12 rounded-xl text-lg border-gray-200 bg-white focus:border-[#006241] focus:ring-[#006241] shadow-inner pl-8"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+                                <Button type="submit" className="w-full h-14 rounded-2xl bg-black text-white hover:bg-gray-800 font-bold shadow-xl mt-2 transition-all active:scale-95" disabled={!storeName || !productName || !productPrice}>
+                                    Initialize & Print <Receipt className="w-4 h-4 ml-2" />
+                                </Button>
+                             </form>
                          </div>
 
-                        <form onSubmit={handleProductSubmit} className="space-y-4">
-                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Product Name</label>
-                                <Input
-                                    ref={inputRef}
-                                    value={productName}
-                                    onChange={(e) => setProductName(e.target.value)}
-                                    className="pl-4 h-14 rounded-2xl text-lg border-transparent shadow-lg ring-1 ring-gray-100 focus:border-[#006241] focus:ring-[#006241] bg-white transition-all"
-                                    placeholder="e.g. Latte"
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Price</label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">€</span>
-                                    <Input
-                                        type="number"
-                                        value={productPrice}
-                                        onChange={(e) => setProductPrice(e.target.value)}
-                                        className="pl-10 h-14 rounded-2xl text-lg border-transparent shadow-lg ring-1 ring-gray-100 focus:border-[#006241] focus:ring-[#006241] bg-white transition-all"
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                            </div>
-                            <Button type="submit" className="w-full h-14 rounded-2xl bg-black text-white hover:bg-gray-800 font-bold shadow-lg mt-2" disabled={!productName || !productPrice}>
-                                Launch Store <ArrowRight className="w-4 h-4 ml-2" />
-                            </Button>
-                        </form>
+                         {/* Printer Slot (Always visible during steps) */}
+                         <div className="w-[94%] h-10 bg-gray-950 rounded-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] relative z-50 ring-4 ring-white flex items-center justify-center overflow-hidden -mt-6">
+                            <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 to-black" />
+                            <div className="w-[90%] h-1 bg-white/5 rounded-full absolute top-1/2 -translate-y-1/2" />
+                         </div>
                     </motion.div>
                 )}
 
-                {/* GENERATING */}
-                {step === "generating" && (
+                {/* STEP 3: RECEIPT (PRINTED FROM SLOT) */}
+                {step === "receipt" && (
                     <motion.div
-                        key="generating"
+                        key="receipt"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex flex-col items-center justify-center space-y-8 text-center w-full h-full"
+                        className="w-full flex flex-col items-center pt-8"
                     >
-                        <div className="relative w-32 h-32">
-                            <div className="absolute inset-0 bg-white rounded-full shadow-2xl flex items-center justify-center">
-                                <ImageWithFallback src={IMAGES.cafe} className="w-full h-full rounded-full object-cover opacity-50" />
-                            </div>
-                            <div className="absolute inset-0 border-4 border-[#006241] rounded-full border-t-transparent animate-spin z-10"></div>
-                            <div className="absolute inset-0 flex items-center justify-center z-20">
-                                <Store className="w-10 h-10 text-[#006241]" />
-                            </div>
-                        </div>
-                        <div className="space-y-2 bg-white/80 backdrop-blur-md p-4 rounded-2xl shadow-sm">
-                            <p className="font-bold text-gray-900 text-lg">Building {storeName}...</p>
-                            <div className="flex flex-col gap-1 text-xs text-gray-500 font-medium">
-                                <span className="flex items-center gap-1 justify-center"><CheckCircle2 className="w-3 h-3 text-green-500" /> Generating QR Code</span>
-                                <span className="flex items-center gap-1 justify-center opacity-50"><CheckCircle2 className="w-3 h-3" /> Configuring Payment Link</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
+                         {/* Minimal Printer Top */}
+                         <div className="w-[94%] h-12 bg-gray-950 rounded-full shadow-[inset_0_2px_15px_rgba(0,0,0,0.9)] relative z-50 ring-4 ring-white flex items-center justify-center overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 to-black" />
+                            <div className="w-full h-[2px] bg-white/5 absolute top-1/2 -translate-y-1/2" />
+                         </div>
 
-                {/* TEST PAYMENT (QR CODE) */}
-                {step === "test_payment" && (
-                    <motion.div
-                        key="test_payment"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.05 }}
-                        className="w-full text-center h-full flex flex-col justify-end pb-8"
-                    >
-                        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-64 bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50 space-y-4">
-                             <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                                <span className="font-bold text-gray-900 text-sm">{storeName}</span>
-                                <span className="font-bold text-gray-900">€{productPrice}</span>
-                             </div>
-                             
-                             <div className="bg-white p-2 rounded-xl border border-gray-100 shadow-inner">
-                                <QrCode className="w-full aspect-square text-gray-900" />
-                             </div>
-
-                             <button 
-                                onClick={handleSimulatePayment}
-                                className="w-full py-3 bg-[#006241] text-white rounded-xl font-bold text-sm shadow-lg hover:bg-[#005035] transition-colors flex items-center justify-center gap-2 animate-pulse"
+                         {/* Animated Receipt Paper */}
+                         <div className="relative w-[88%] mx-auto -mt-6 z-30 overflow-hidden mb-2">
+                            <motion.div
+                                initial={{ y: "-100%" }}
+                                animate={{ y: 0 }}
+                                transition={{ duration: 1.4, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                                className="w-full bg-white shadow-2xl relative px-5 py-6"
+                                style={{
+                                    clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 97.5% 98.5%, 95% 100%, 92.5% 98.5%, 90% 100%, 87.5% 98.5%, 85% 100%, 82.5% 98.5%, 80% 100%, 77.5% 98.5%, 75% 100%, 72.5% 98.5%, 70% 100%, 67.5% 98.5%, 65% 100%, 62.5% 98.5%, 60% 100%, 57.5% 98.5%, 55% 100%, 52.5% 98.5%, 50% 100%, 47.5% 98.5%, 45% 100%, 42.5% 98.5%, 40% 100%, 37.5% 98.5%, 35% 100%, 32.5% 98.5%, 30% 100%, 27.5% 98.5%, 25% 100%, 22.5% 98.5%, 20% 100%, 17.5% 98.5%, 15% 100%, 12.5% 98.5%, 10% 100%, 7.5% 98.5%, 5% 100%, 2.5% 98.5%, 0% 100%)"
+                                }}
                             >
-                                <Smartphone className="w-4 h-4" /> Tap to Pay
-                             </button>
-                        </div>
-                        
-                        <div className="bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold mx-auto mb-4">
-                            Simulated Customer View
-                        </div>
-                    </motion.div>
-                )}
-
-                {/* COMPLETE (SUCCESS) */}
-                {step === "complete" && (
-                    <motion.div
-                        key="complete"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="w-full text-center space-y-6"
-                    >
-                        <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-2xl shadow-green-500/30">
-                             <CheckCircle2 className="w-10 h-10 text-white" />
-                        </div>
-
-                        <div className="space-y-1">
-                             <h3 className="text-3xl font-bold text-gray-900">€ {parseFloat(productPrice).toFixed(2)}</h3>
-                             <p className="text-gray-500 font-medium">Payment successful</p>
-                        </div>
-
-                        {/* Receipt Card */}
-                        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-xl max-w-[280px] mx-auto text-sm rotate-1 transform transition-transform hover:rotate-0">
-                            <div className="flex justify-between text-gray-500 mb-2">
-                                <span>Item</span>
-                                <span>Price</span>
-                            </div>
-                            <div className="flex justify-between font-bold text-gray-900 border-b border-gray-100 pb-3 mb-3">
-                                <span>{productName}</span>
-                                <span>€{parseFloat(productPrice).toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-1 text-xs text-gray-400">
-                                    <CreditCard className="w-3 h-3" /> Visa •• 4242
+                                {/* Receipt Header */}
+                                <div className="flex flex-col items-center border-b border-gray-100 pb-3 mb-3 pt-2">
+                                    <div className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center mb-2 border border-gray-100">
+                                        <Store className="w-4 h-4 text-[#006241]" />
+                                    </div>
+                                    <h3 className="font-bold text-base text-gray-900 mb-0.5">{storeName}</h3>
+                                    <p className="text-[8px] text-gray-400 font-bold uppercase tracking-[0.2em]">
+                                        {new Date().toLocaleDateString('en-GB')} • {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
                                 </div>
-                                <span className="bg-green-100 text-[#006241] px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Paid</span>
-                            </div>
-                        </div>
 
-                        <div className="space-y-3 pt-2">
-                            <Button 
-                                onClick={handleClaimShop}
-                                className="w-full h-14 rounded-2xl bg-[#006241] hover:bg-[#005035] font-bold text-lg shadow-xl shadow-[#006241]/20"
-                            >
-                                Claim Real Money
-                            </Button>
-                            <button 
-                                onClick={handleRestart}
-                                className="text-xs text-gray-400 hover:text-gray-600 font-medium flex items-center justify-center gap-2 w-full"
-                            >
-                                <RefreshCw className="w-3 h-3" /> Start over
-                            </button>
-                        </div>
+                                {/* Receipt Items */}
+                                <div className="space-y-2 mb-3">
+                                    <div className="flex justify-between items-center text-[11px]">
+                                        <span className="font-bold text-gray-900">1x {productName}</span>
+                                        <span className="font-mono font-bold text-gray-900">€{parseFloat(productPrice).toFixed(2)}</span>
+                                    </div>
+                                    <div className="h-px border-b border-dashed border-gray-100" />
+                                    <div className="flex justify-between items-center pt-0.5">
+                                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Grand Total</span>
+                                        <span className="text-xl font-bold text-[#006241] tracking-tighter">€{parseFloat(productPrice).toFixed(2)}</span>
+                                    </div>
+                                </div>
+
+                                {/* Payment Status Badge */}
+                                <div className="bg-emerald-50 rounded-lg p-2.5 flex items-center justify-between border border-emerald-100">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center">
+                                            <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[7px] font-bold text-emerald-800 uppercase tracking-widest leading-none">Status</p>
+                                            <p className="text-[10px] font-bold text-emerald-900">Paid Instantly</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[7px] font-bold text-gray-400 uppercase tracking-widest leading-none">Method</p>
+                                        <p className="text-[9px] font-bold text-gray-600 flex items-center justify-end gap-1">
+                                            <CreditCard className="w-2 h-2" /> •••• 4242
+                                        </p>
+                                    </div>
+                                </div>
+                            </motion.div>
+                         </div>
+
+                        {/* Conversion Section */}
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 1.0, duration: 0.6 }}
+                            className="w-full text-center space-y-3 px-2"
+                        >
+                            <div className="space-y-1">
+                                <h2 className="text-xl font-bold text-gray-900 tracking-tight leading-tight">
+                                    Your shop is ready.
+                                </h2>
+                                <p className="text-[11px] text-gray-500 font-medium">
+                                    Login with email to have a look inside. <span className="text-[#006241] font-bold">ITS FREE!</span>
+                                </p>
+                            </div>
+                            
+                            <form onSubmit={handleActivateShop} className="space-y-2.5">
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                        <Mail className="w-3.5 h-3.5 text-gray-400 group-focus-within:text-[#006241] transition-colors" />
+                                    </div>
+                                    <Input
+                                        type="email"
+                                        required
+                                        placeholder="your@email.com"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="h-10 rounded-xl pl-10 text-center border-gray-100 bg-white shadow-sm focus:border-[#006241] focus:ring-[#006241] text-sm"
+                                    />
+                                </div>
+                                <Button 
+                                    type="submit" 
+                                    className="w-full h-12 rounded-xl bg-[#006241] hover:bg-[#005035] font-bold shadow-lg shadow-[#006241]/10 text-white transition-all hover:scale-[1.01] active:scale-[0.99]"
+                                >
+                                    Enter Your Store Now
+                                </Button>
+                                <button 
+                                    type="button" 
+                                    onClick={handleRestart}
+                                    className="text-[9px] font-bold text-gray-300 uppercase tracking-widest hover:text-gray-500 transition-colors"
+                                >
+                                    Start Over
+                                </button>
+                            </form>
+                        </motion.div>
                     </motion.div>
                 )}
 

@@ -18,6 +18,32 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "../components/ui/utils";
+import { GuidedTour, TourStep } from "../components/GuidedTour";
+
+// Bank Logo Component for Terminal
+const BankLogo = ({ type, size = "md" }: { type: string, size?: "sm" | "md" | "lg" }) => {
+  const sizeClasses = {
+    sm: "w-6 h-6 rounded-lg",
+    md: "w-10 h-10 rounded-xl",
+    lg: "w-14 h-14 rounded-2xl"
+  };
+
+  const logos: Record<string, string> = {
+    nordea: "https://images.unsplash.com/photo-1582728338776-cb14fd2e42be?w=100&h=100&fit=crop",
+    swedbank: "https://images.unsplash.com/photo-1728426340277-b2e45fa616a1?w=100&h=100&fit=crop",
+    seb: "https://images.unsplash.com/photo-1535811494373-6c551746eb13?w=100&h=100&fit=crop",
+  };
+
+  return (
+    <div className={cn("bg-white border border-gray-100 flex items-center justify-center overflow-hidden shadow-sm", sizeClasses[size])}>
+      <ImageWithFallback 
+        src={logos[type] || logos.nordea} 
+        alt={type} 
+        className="w-full h-full object-cover grayscale"
+      />
+    </div>
+  );
+};
 
 // Rating Type
 interface Rating {
@@ -224,6 +250,32 @@ function PrePromptSheet({
 }
 
 export default function SellerAppPage() {
+  // Tour State
+  const [tourVisible, setTourVisible] = useState(true);
+  const sellerTourSteps: TourStep[] = [
+    {
+      targetId: "new-sale-btn",
+      title: "Create your first product",
+      body: "Add photos, price, and inventory. Your first listing is just seconds away.",
+      buttonText: "Next",
+      placement: "top"
+    },
+    {
+      targetId: "payout-settings",
+      title: "Get paid",
+      body: "Add your payout details to receive earnings directly to your bank account.",
+      buttonText: "Next",
+      placement: "bottom"
+    },
+    {
+      targetId: "history-tab",
+      title: "Fulfill orders here",
+      body: "Track status and manage delivery in real-time from this menu.",
+      buttonText: "Got it",
+      placement: "top"
+    }
+  ];
+
   // State
   const [activeTab, setActiveTab] = useState("new-sale");
   const [saleMode, setSaleMode] = useState("quick-items"); 
@@ -456,6 +508,20 @@ export default function SellerAppPage() {
 
         <main className="flex-1 overflow-y-auto p-4 space-y-8 max-w-md mx-auto w-full">
           {/* Device Security */}
+          <section className="space-y-3">
+            <h3 className="font-bold px-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Settlement</h3>
+            <div className="bg-white rounded-3xl border-none ring-1 ring-black/5 overflow-hidden shadow-sm p-4 flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                 <BankLogo type="nordea" size="md" />
+                 <div className="flex flex-col">
+                   <span className="text-sm font-medium">Nordea Bank</span>
+                   <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Active Settlement</span>
+                 </div>
+               </div>
+               <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+          </section>
+
           <section className="space-y-3">
             <h3 className="font-bold px-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Security</h3>
             <div className="bg-white rounded-3xl border-none ring-1 ring-black/5 overflow-hidden shadow-sm">
@@ -743,6 +809,11 @@ export default function SellerAppPage() {
 
   return (
     <div className="min-h-screen bg-[#F7F5EF] flex flex-col">
+      <GuidedTour 
+        steps={sellerTourSteps} 
+        isVisible={tourVisible} 
+        onComplete={() => setTourVisible(false)} 
+      />
       <SellerHeader 
         title="Bella's Coffee" 
         className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100"
@@ -839,6 +910,7 @@ export default function SellerAppPage() {
                     className="fixed bottom-[88px] left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-[calc(448px-32px)] z-50"
                   >
                     <Button 
+                      id="new-sale-btn"
                       className="w-full h-16 rounded-3xl bg-[#006241] hover:bg-[#00754A] shadow-2xl shadow-[#006241]/30 flex items-center justify-between px-8 transition-transform active:scale-95 border-4 border-[#F7F5EF]"
                       onClick={handleCreateSale}
                     >
